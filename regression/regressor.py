@@ -58,7 +58,7 @@ class SplineRegressor(Regressor):
         self._knots = np.concatenate(
             (
                 [x_min] * (order - 1),
-                np.linspace(x_min, x_max, n_bins),
+                np.linspace(x_min, x_max, n_bins + 1),
                 [x_max] * (order - 1),
             )
         )
@@ -71,7 +71,7 @@ class SplineRegressor(Regressor):
         x = np.linspace(x_min, x_max, 1000)
         norms = []
         for spline in splines:
-            norms.append(np.trapz(x, scipy.interpolate.splev(x, spline)))
+            norms.append(np.trapz(scipy.interpolate.splev(x, spline), x))
         self._norms = norms
 
     def _internal_score(self, value):
@@ -79,7 +79,8 @@ class SplineRegressor(Regressor):
             self._coeffs += scipy.interpolate.splev(value, spline)
 
     def normalize(self):
-        return np.array(self._coeffs) / (np.array(self._norms) * self._n)
+        norms = np.array([n if n > 0 else 1.0 for n in self._norms])
+        return np.array(self._coeffs) / (self._norms * self._n)
 
     def plot(self):
         coeffs = self.normalize()
