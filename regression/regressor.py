@@ -78,7 +78,7 @@ class SplineRegressor(Regressor):
 
     def _internal_score(self, value):
         for i, spline in enumerate(self._splines):
-            self._coeffs += scipy.interpolate.splev(value, spline)
+            self._coeffs[i] += scipy.interpolate.splev(value, spline)
 
     def normalize(self):
         norms = np.array([n if n > 0 else 1.0 for n in self._norms])
