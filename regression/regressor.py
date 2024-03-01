@@ -73,8 +73,8 @@ class SplineRegressor(Regressor):
         x = np.linspace(x_min, x_max, 1000)
         norms = []
         for spline in splines:
-            norms.append(np.trapz(scipy.interpolate.splev(x, spline), x))
-        self._norms = norms
+            norms.append(np.sqrt(np.trapz(scipy.interpolate.splev(x, spline) ** 2, x)))
+        self._norms = np.array(norms)
 
     def _internal_score(self, value):
         for i, spline in enumerate(self._splines):
