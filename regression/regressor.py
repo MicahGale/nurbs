@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 
@@ -46,7 +47,8 @@ class HistogramRegressor(Regressor):
         return np.array(self._coeffs) / self._n
 
     def plot(self):
-        coeffs = sefl.normalize()
+        coeffs = self.normalize()
+        plt.stairs(coeffs, np.array(range(0, self._n_bins + 1)) * self._bin_width)
 
 
 class SplineRegressor(Regressor):
