@@ -82,7 +82,7 @@ class SplineRegressor(Regressor):
 
     def normalize(self):
         norms = np.array([n if n > 0 else 1.0 for n in self._norms])
-        return np.array(self._coeffs) / (self._norms * self._n)
+        return self._coeffs / (self._norms * self._n)
 
     def plot(self):
         coeffs = self.normalize()
