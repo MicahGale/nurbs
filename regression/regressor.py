@@ -57,6 +57,8 @@ class SplineRegressor(Regressor):
         self._max = x_max
         self._n_bins = n_bins
         self._bin_width = (x_max - x_min) / n_bins
+        self._order = order
+
         self._knots = np.concatenate(
             (
                 [x_min] * (order - 1),
@@ -86,3 +88,19 @@ class SplineRegressor(Regressor):
 
     def plot(self):
         coeffs = self.normalize()
+        x = np.linspace(self._min, self._max, 100)
+        spline = scipy.interpolate.BSpline(self._knots, coeffs, self._order)
+        y = scipy.interpolate.splev(x, spline)
+        return plt.plot(x, y)
+
+    def calculate_orthogonal(self):
+        x = np.linspace(self._min, self._max, 100)
+        products = np.zeros((self._dim, self._dim))
+        splev = scipy.interpolate.splev
+        for i, spline_1 in enumerate(self._splines):
+            for j, spline_2 in enumerate(self._splines[: i + 1]):
+                product = np.trapz(
+                    np.multiply(splev(x, spline_1), splev(x, spline_2)), x
+                )
+                products[i, j] = product
+        return products
