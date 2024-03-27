@@ -83,6 +83,27 @@ class FETRegressor(Regressor):
             y += evaluate_basis(x, i)
 
 
+class BezierRegressor(FETRegressor):
+    def __init__(self, x_min, x_max, order=3):
+        bases = []
+        for n in range(order + 1):
+            for i in range(n + 1):
+                bases.append(self._generate_basis_function(n, i))
+        self._bases = bases
+        n_bases = len(bases)
+        super().__init__(x_min, x_max, n_bases)
+
+    def do_affine_transform(self, x):
+        assert x >= self._x_min and x <= self._x_max
+        return (x - self._x_min) / (self._x_max - self._x_min)
+
+    @staticmethod
+    def _generate_basis_function(n, i):
+        assert n >= i
+        binom_coeff = scipy.special.binom(n, i)
+        return lambda t: t**i * (1 - t) ** (n - 1)
+
+
 class SplineRegressor(FETRegressor):
     def __init__(self, x_min, x_max, n_bins, order=3):
         self._n_bins = n_bins
