@@ -51,10 +51,40 @@ class HistogramRegressor(Regressor):
         plt.stairs(coeffs, np.array(range(0, self._n_bins + 1)) * self._bin_width)
 
 
-class SplineRegressor(Regressor):
-    def __init__(self, x_min, x_max, n_bins, order=3):
+class FETRegressor(Regressor):
+    def __init__(self, x_min, x_max, n_bases):
+        super().__init__(n_bases)
         self._min = x_min
         self._max = x_max
+        # calculate norms
+        norms = []
+        x = np.linspace(x_min, x_max, 1000)
+        for i in range(self._dim):
+            norms.append(np.trapz(self.evaluate_basis(x, i) ** 2, x))
+        self._norms = np.array(norms)
+
+    @abstractmethod
+    def evaluate_basis(self, x, i):
+        pass
+
+    def normalize(self):
+        norms = np.array([n if n > 0 else 1.0 for n in self._norms])
+        return self._coeffs / (self._norms * self._n)
+
+    def _internal_score(self, value):
+        for i in range(self._dim):
+            self._coeffs[i] += self.evaluate_basis(value, i)
+
+    def plot(self):
+        coeffs = self.normalize()
+        x = np.linspace(self._min, self._max, 100)
+        y = np.zeroslike(x)
+        for i in range(self._dim):
+            y += evaluate_basis(x, i)
+
+
+class SplineRegressor(FETRegressor):
+    def __init__(self, x_min, x_max, n_bins, order=3):
         self._n_bins = n_bins
         self._bin_width = (x_max - x_min) / n_bins
         self._order = order
@@ -66,25 +96,14 @@ class SplineRegressor(Regressor):
                 [x_max] * (order - 1),
             )
         )
-        super().__init__(len(self._knots))
         splines = []
         for row in np.identity(len(self._knots)):
             splines.append(scipy.interpolate.BSpline(self._knots, row, order))
-
         self._splines = splines
-        x = np.linspace(x_min, x_max, 1000)
-        norms = []
-        for spline in splines:
-            norms.append(np.trapz(scipy.interpolate.splev(x, spline) ** 2, x))
-        self._norms = np.array(norms)
+        super().__init__(x_min, x_max, len(self._knots))
 
-    def _internal_score(self, value):
-        for i, spline in enumerate(self._splines):
-            self._coeffs[i] += scipy.interpolate.splev(value, spline)
-
-    def normalize(self):
-        norms = np.array([n if n > 0 else 1.0 for n in self._norms])
-        return self._coeffs / (self._norms * self._n)
+    def evaluate_basis(self, value, i):
+        return scipy.interpolate.splev(value, self._splines[i])
 
     def plot(self):
         coeffs = self.normalize()
