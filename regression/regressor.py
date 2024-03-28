@@ -123,8 +123,33 @@ class BezierRegressor(FETRegressor):
         return self._bases[i](self.do_affine_transform(x))
 
 
-class OrthBezierRegressor(BezierRegressor):
-    pass
+class OrthoBezierRegressor(BezierRegressor):
+    def __init__(self, x_min, x_max, order=3):
+        bases = []
+        for i in range(order + 1):
+            bases.append(self._generate_basis_function(order, i))
+        self._bases = bases
+        super().__init__(x_min, x_max, order + 1)
+
+    @staticmethod
+    def _generate_basis_function(n, i):
+        base_coefficient = np.sqrt(2 * (n - i) + 1)
+
+        def ortho_bern(t):
+            value = 0.0
+            for k in range(i + 1):
+                bernstein = BezierRegressor._generate_basis_function(n - k, i - k)
+                binom = scipy.special.binom
+                coeff = (
+                    base_coefficient
+                    * (-(1**k))
+                    * (binom(2 * n + 1 - k, i - k) * binom(i, k))
+                    / binom(n - k, i - k)
+                )
+                value += coeff * bernstein(t)
+            return value
+
+        return ortho_bern
 
 
 class SplineRegressor(FETRegressor):
