@@ -124,6 +124,14 @@ class BezierRegressor(FETRegressor):
 
 
 class OrthoBezierRegressor(BezierRegressor):
+    """
+
+    Based on:
+
+    M. A. Bellucci, “On the explicit representation of orthonormal Bernstein polynomials.” Apr. 09, 2014.
+        Accessed: Mar. 14, 2024. [Online]. Available: https://arxiv.org/abs/1404.2293
+    """
+
     def __init__(self, x_min, x_max, order=3):
         bases = []
         for i in range(order + 1):
