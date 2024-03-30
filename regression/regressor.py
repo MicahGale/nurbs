@@ -129,25 +129,19 @@ class OrthoBezierRegressor(BezierRegressor):
         for i in range(order + 1):
             bases.append(self._generate_basis_function(order, i))
         self._bases = bases
-        super().__init__(x_min, x_max, order + 1)
+        super().__init__(x_min, x_max, order)
 
     @staticmethod
     def _generate_basis_function(n, i):
-        base_coefficient = np.sqrt(2 * (n - i) + 1)
-
         def ortho_bern(t):
-            value = 0.0
+            first_poly = np.sqrt(2 * (n - i) + 1) * (1 - t) ** (n - i)
+            value = 0
             for k in range(i + 1):
-                bernstein = BezierRegressor._generate_basis_function(n - k, i - k)
                 binom = scipy.special.binom
-                coeff = (
-                    base_coefficient
-                    * (-(1**k))
-                    * (binom(2 * n + 1 - k, i - k) * binom(i, k))
-                    / binom(n - k, i - k)
+                value += (
+                    (-1) ** k * binom(2 * n + 1 - k, i - k) * binom(i, k) * t ** (i - k)
                 )
-                value += coeff * bernstein(t)
-            return value
+            return first_poly * value
 
         return ortho_bern
 

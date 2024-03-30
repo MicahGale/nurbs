@@ -22,7 +22,7 @@ max = 10.0
 bins = 10
 histo = regressor.HistogramRegressor(min, max, bins)
 spline = regressor.SplineRegressor(min, max, bins, 4)
-bezier = regressor.OrthoBezierRegressor(min, max, 2)
+bezier = regressor.OrthoBezierRegressor(min, max, 6)
 
 for name, curve in [("spline", spline), ("bezier", bezier)]:
     plt.clf()
