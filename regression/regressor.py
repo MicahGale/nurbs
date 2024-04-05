@@ -23,7 +23,7 @@ class Regressor(ABC):
         pass
 
     @abstractmethod
-    def plot(self):
+    def plot(self, ax=None):
         pass
 
     def reset(self):
@@ -46,9 +46,13 @@ class HistogramRegressor(Regressor):
     def normalize(self):
         return np.array(self._coeffs) / self._n
 
-    def plot(self):
+    def plot(self, ax=None):
         coeffs = self.normalize()
-        plt.stairs(coeffs, np.array(range(0, self._n_bins + 1)) * self._bin_width)
+        if ax is None:
+            plotter = plt
+        else:
+            plotter = ax
+        plotter.stairs(coeffs, np.array(range(0, self._n_bins + 1)) * self._bin_width)
 
 
 class FETRegressor(Regressor):
@@ -75,13 +79,17 @@ class FETRegressor(Regressor):
         for i in range(self._dim):
             self._coeffs[i] += self.evaluate_basis(value, i)
 
-    def plot(self):
+    def plot(self, ax=None):
         coeffs = self.normalize()
         x = np.linspace(self._min, self._max, 100)
         y = np.zeros_like(x)
         for i, coef in enumerate(coeffs):
             y += coef * self.evaluate_basis(x, i)
-        return plt.plot(x, y)
+        if ax is None:
+            plotter = plt
+        else:
+            plotter = ax
+        return plotter.plot(x, y)
 
     def plot_bases(self):
         lines = []
@@ -176,12 +184,16 @@ class SplineRegressor(FETRegressor):
     def evaluate_basis(self, value, i):
         return scipy.interpolate.splev(value, self._splines[i])
 
-    def plot(self):
+    def plot(self, ax=None):
         coeffs = self.normalize()
         x = np.linspace(self._min, self._max, 100)
         spline = scipy.interpolate.BSpline(self._knots, coeffs, self._order)
         y = scipy.interpolate.splev(x, spline)
-        return plt.plot(x, y)
+        if ax is None:
+            plotter = plt
+        else:
+            plotter = ax
+        return plotter.plot(x, y)
 
     def calculate_orthogonal(self):
         x = np.linspace(self._min, self._max, 100)
