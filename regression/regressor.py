@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import matplotlib.pyplot as plt
 import numpy as np
+from uncertainties import ufloat
 import scipy
 
 
@@ -58,6 +59,7 @@ class HistogramRegressor(Regressor):
 class FETRegressor(Regressor):
     def __init__(self, x_min, x_max, n_bases):
         super().__init__(n_bases)
+        self._moments = np.zeros(n_bases)
         self._min = x_min
         self._max = x_max
         # calculate norms
@@ -73,23 +75,39 @@ class FETRegressor(Regressor):
 
     def normalize(self):
         norms = np.array([n if n > 0 else 1.0 for n in self._norms])
-        return self._coeffs / (self._norms * self._n)
+        coeffs = self._coeffs / (self._norms * self._n)
+        squares = self._moments / (self._norms * self._n)
+        ret = [
+            ufloat(float(coef), float(1 / (self._n - 1) * np.sqrt(square - coef**2)))
+            for coef, square in zip(coeffs, squares)
+        ]
+        return ret
 
     def _internal_score(self, value):
         for i in range(self._dim):
-            self._coeffs[i] += self.evaluate_basis(value, i)
+            basis_eval = self.evaluate_basis(value, i)
+            self._coeffs[i] += basis_eval
+            self._moments[i] += basis_eval**2
 
     def plot(self, ax=None):
         coeffs = self.normalize()
         x = np.linspace(self._min, self._max, 100)
         y = np.zeros_like(x)
+        upper = np.zeros_like(x)
+        lower = np.zeros_like(x)
         for i, coef in enumerate(coeffs):
-            y += coef * self.evaluate_basis(x, i)
+            upper += (coef.n + coef.s) * self.evaluate_basis(x, i)
+            y += coef.n * self.evaluate_basis(x, i)
+            lower += (coef.n - coef.s) * self.evaluate_basis(x, i)
         if ax is None:
             plotter = plt
         else:
             plotter = ax
-        return plotter.plot(x, y)
+        lines = []
+        lines.append(plotter.plot(x, y))
+        lines.append(plotter.plot(x, upper))
+        lines.append(plotter.plot(x, lower))
+        return lines
 
     def plot_bases(self):
         lines = []
