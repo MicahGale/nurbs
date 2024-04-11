@@ -29,7 +29,8 @@ mu = 5.0
 sigma = 1.0
 xs = np.linspace(0, 10)
 fig, axes_rows = plt.subplots(5, 6, figsize=(30, 20))
-for samples, ax_row in zip([10, 100, 1000, 10_000, 100_000], axes_rows):
+for samples, ax_row in zip([2, 10, 100, 10_00, 10_000], axes_rows):
+    print(samples)
     for i in range(samples):
         x = np.random.normal(mu, sigma)
         if x < min or x > max:
@@ -38,9 +39,8 @@ for samples, ax_row in zip([10, 100, 1000, 10_000, 100_000], axes_rows):
             regressor.score(x)
     for i, (r, ax) in enumerate(zip(regressors[1:], ax_row)):
         ax.plot(xs, normal(xs, mu, sigma), "k--", label="true curve")
-        regressors[0].plot(ax)
-        print(r.mean(), r.std(), 1 - r.r2(lambda x: normal(x, mu, sigma)), r.rel_err())
-        r.plot(ax)
+        regressors[0].plot(ax,)
+        r.plot(ax,lambda x: normal(x, mu, sigma))
         ax.set_title(f"n={samples} order={(i+1)*2}")
     [r.reset() for r in regressors]
 

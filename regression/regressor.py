@@ -89,7 +89,7 @@ class FETRegressor(Regressor):
             self._coeffs[i] += basis_eval
             self._moments[i] += basis_eval**2
 
-    def plot(self, ax=None):
+    def plot(self, ax=None, true_func=None):
         coeffs = self.normalize()
         x = np.linspace(self._min, self._max, 100)
         y = np.zeros_like(x)
@@ -104,6 +104,13 @@ class FETRegressor(Regressor):
         else:
             plotter = ax
         lines = []
+        mean = self.mean()
+        std = self.std()
+        legends = [f"Coeff rel-error: {self.rel_err():.2g}"]
+        if true_func:
+            legends.append(f"1- R^2: {1 - self.r2(true_func):.2g}")
+        plotter.legend(labels=legends)
+        plotter.errorbar(mean, 0.3, xerr=std, fmt="k^", capsize=3)
         lines.append(plotter.plot(x, y))
         lines.append(plotter.plot(x, upper))
         lines.append(plotter.plot(x, lower))
