@@ -141,6 +141,21 @@ class FETRegressor(Regressor):
         y = self.evaluate(x)
         return np.sqrt(np.trapz(y * (x - mean) ** 2, x))
 
+    def r2(self, true_func):
+        mean = self.mean()
+        x = np.linspace(self._min, self._max, 1000)
+        y = self.evaluate(x)
+        true_y = true_func(x)
+        residual_sum = np.square(y - true_y).sum()
+        total_sum = np.square(y - mean).sum()
+        return 1 - residual_sum / total_sum
+
+    def rel_err(self):
+        coeffs = self.normalize()
+        mean = np.sqrt(np.mean(np.square([c.n for c in coeffs])))
+        std = np.sqrt(np.mean(np.square([c.s for c in coeffs])))
+        return std / mean
+
 
 class BezierRegressor(FETRegressor):
     def __init__(self, x_min, x_max, order=3):

@@ -39,7 +39,7 @@ for samples, ax_row in zip([10, 100, 1000, 10_000, 100_000], axes_rows):
     for i, (r, ax) in enumerate(zip(regressors[1:], ax_row)):
         ax.plot(xs, normal(xs, mu, sigma), "k--", label="true curve")
         regressors[0].plot(ax)
-        print(r.mean(), r.std())
+        print(r.mean(), r.std(), 1 - r.r2(lambda x: normal(x, mu, sigma)), r.rel_err())
         r.plot(ax)
         ax.set_title(f"n={samples} order={(i+1)*2}")
     [r.reset() for r in regressors]
