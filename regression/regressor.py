@@ -109,6 +109,13 @@ class FETRegressor(Regressor):
         lines.append(plotter.plot(x, lower))
         return lines
 
+    def evaluate(self, x):
+        coeffs = self.normalize()
+        y = np.zeros_like(x)
+        for i, coef in enumerate(coeffs):
+            y += coef.n * self.evaluate_basis(x, i)
+        return y
+
     def plot_bases(self):
         lines = []
         x = np.linspace(self._min, self._max, 100)
@@ -122,6 +129,17 @@ class FETRegressor(Regressor):
         for i in range(self._dim):
             y += self.evaluate_basis(x, i)
         return plt.plot(x, y)
+
+    def mean(self):
+        x = np.linspace(self._min, self._max, 1000)
+        y = self.evaluate(x)
+        return np.trapz(x * y, x)
+
+    def std(self):
+        mean = self.mean()
+        x = np.linspace(self._min, self._max, 1000)
+        y = self.evaluate(x)
+        return np.sqrt(np.trapz(y * (x - mean) ** 2, x))
 
 
 class BezierRegressor(FETRegressor):
