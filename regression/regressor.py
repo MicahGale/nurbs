@@ -96,9 +96,12 @@ class FETRegressor(Regressor):
         upper = np.zeros_like(x)
         lower = np.zeros_like(x)
         for i, coef in enumerate(coeffs):
-            upper += (coef.n + coef.s) * self.evaluate_basis(x, i)
+            bounds = [coef.n + coef.s, coef.n - coef.s]
+            lower_bound = min(bounds)
+            upper_bound = max(bounds)
+            upper += upper_bound * self.evaluate_basis(x, i)
             y += coef.n * self.evaluate_basis(x, i)
-            lower += (coef.n - coef.s) * self.evaluate_basis(x, i)
+            lower += lower_bound * self.evaluate_basis(x, i)
         if ax is None:
             plotter = plt
         else:
@@ -108,7 +111,7 @@ class FETRegressor(Regressor):
         std = self.std()
         legends = [f"Coeff rel-error: {self.rel_err():.2g}"]
         if true_func:
-            legends.append(f"1- R^2: {1 - self.r2(true_func):.2g}")
+            legends.append(f"R^2: {self.r2(true_func):.2g}")
         plotter.legend(labels=legends)
         plotter.errorbar(mean, 0.3, xerr=std, fmt="k^", capsize=3)
         lines.append(plotter.plot(x, y))
