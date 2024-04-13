@@ -152,12 +152,12 @@ class FETRegressor(Regressor):
         return np.sqrt(np.trapz(y * (x - mean) ** 2, x))
 
     def r2(self, true_func):
-        mean = self.mean()
         x = np.linspace(self._min, self._max, 1000)
         y = self.evaluate(x)
+        ybar = y.mean()
         true_y = true_func(x)
         residual_sum = np.square(y - true_y).sum()
-        total_sum = np.square(y - mean).sum()
+        total_sum = np.square(y - ybar).sum()
         return 1 - residual_sum / total_sum
 
     def rel_err(self):
