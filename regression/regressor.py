@@ -166,9 +166,7 @@ class FETRegressor(Regressor):
 
     def rel_err(self):
         coeffs = self.normalize()
-        mean = np.sqrt(np.mean(np.square([c.n for c in coeffs])))
-        std = np.sqrt(np.mean(np.square([c.s for c in coeffs])))
-        return std / mean
+        return np.array([c.s for c in coeffs]).mean()
 
 
 class BezierRegressor(FETRegressor):
