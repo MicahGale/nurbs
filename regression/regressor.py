@@ -89,7 +89,7 @@ class FETRegressor(Regressor):
             self._coeffs[i] += basis_eval
             self._moments[i] += basis_eval**2
 
-    def plot(self, ax=None, true_func=None):
+    def plot(self, ax=None, true_func=None, ylim=None, error_bar=1):
         coeffs = self.normalize()
         x = np.linspace(self._min, self._max, 100)
         y = np.zeros_like(x, dtype=np.object_)
@@ -97,8 +97,12 @@ class FETRegressor(Regressor):
             y += coef * self.evaluate_basis(x, i)
         if ax is None:
             plotter = plt
+            if ylim:
+                plotter.ylim(ylim)
         else:
             plotter = ax
+            if ylim:
+                plotter.set_ylim(ylim)
         lines = []
         mean = self.mean()
         std = self.std()
@@ -108,7 +112,15 @@ class FETRegressor(Regressor):
         plotter.legend(labels=legends)
         plotter.errorbar(mean, 0.3, xerr=std, fmt="k^", capsize=3)
         lines.append(plotter.plot(x, [v.n for v in y], "b-"))
-        lines.append(plotter.fill_between(x, [v.n + v.s for v in y], [v.n - v.s for v in y], alpha = 0.3))
+        for i in range(1, error_bar + 1):
+            lines.append(
+                plotter.fill_between(
+                    x,
+                    [v.n + i * v.s for v in y],
+                    [v.n - i * v.s for v in y],
+                    alpha=0.3 - i*0.05,
+                )
+            )
         return lines
 
     def evaluate(self, x):
