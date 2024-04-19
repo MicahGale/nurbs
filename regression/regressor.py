@@ -41,7 +41,7 @@ class HistogramRegressor(Regressor):
         super().__init__(n_bins)
 
     def _internal_score(self, value):
-        index = int(value / self._bin_width)
+        index = int((value - self._min) / self._bin_width)
         self._coeffs[index] += 1
 
     def normalize(self):
@@ -53,7 +53,9 @@ class HistogramRegressor(Regressor):
             plotter = plt
         else:
             plotter = ax
-        plotter.stairs(coeffs, np.array(range(0, self._n_bins + 1)) * self._bin_width)
+        plotter.stairs(
+            coeffs, np.array(range(0, self._n_bins + 1)) * self._bin_width + self._min
+        )
 
 
 class FETRegressor(Regressor):
@@ -118,7 +120,7 @@ class FETRegressor(Regressor):
                     x,
                     [v.n + i * v.s for v in y],
                     [v.n - i * v.s for v in y],
-                    alpha=0.3 - i*0.05,
+                    alpha=0.3 - i * 0.05,
                 )
             )
         return lines
