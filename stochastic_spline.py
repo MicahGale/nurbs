@@ -71,10 +71,10 @@ for trifecta in [
         (0, 1),
     ),
     (
-        lambda x: 1 / 2 * np.cos(x),
-        lambda: np.arcsin(np.random.uniform(0, 1) - 1 / 2),
+        lambda x: np.cos(x),
+        lambda: np.arcsin(np.random.uniform(0, 1)),
         "cosine",
-        -np.pi / 2,
+        0,
         np.pi / 2,
         (0, 1),
     ),
