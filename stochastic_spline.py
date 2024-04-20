@@ -63,7 +63,7 @@ for trifecta in [
         (-0.1, 0.5),
     ),
     (
-        np.exp,
+        lambda x: np.exp(-x),
         np.random.exponential,
         "exponential",
         0,
