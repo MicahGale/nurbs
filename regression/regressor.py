@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import itertools as it
 import matplotlib.pyplot as plt
 import numpy as np
 from uncertainties import ufloat
@@ -194,6 +195,39 @@ class BezierRegressor(FETRegressor):
 
     def evaluate_basis(self, x, i):
         return self._bases[i](self.do_affine_transform(x))
+
+
+class PiecewiseOrthoBezierReg(FETRegressor):
+    def __init__(self, edges, order=3):
+        regs = []
+        for lower, upper in it.pairwise(edges):
+            regs.append(OrthoBezierRegressor(lower, upper, order))
+        self._regs = regs
+        self._edges = edges
+        super().__init__(edges[0], edges[-1], order + 1)
+
+    def _internal_score(self, x):
+        for (lower, upper), regressor in zip(it.pairwise(self._edges), self._regs):
+            if x >= lower and x <= upper:
+                regressor.score(x)
+                break
+
+    @staticmethod
+    def _generate_basis_function(n, i):
+        pass
+
+    def evaluate_basis(self, x, i):
+        if isinstance(x, (float, int)):
+            return self._evaluate_basis_scalar(x, i)
+        ret = np.zeros_like(x)
+        for j, val in enumerate(x):
+            ret[j] = self._evaluate_basis_scalar(val, i)
+        return ret
+
+    def _evaluate_basis_scalar(self, x, i):
+        for (lower, upper), regressor in zip(it.pairwise(self._edges), self._regs):
+            if x >= lower and x <= upper:
+                return regressor.evaluate_basis(x, i)
 
 
 class OrthoBezierRegressor(BezierRegressor):
