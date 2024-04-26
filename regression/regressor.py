@@ -92,12 +92,14 @@ class FETRegressor(Regressor):
             self._coeffs[i] += basis_eval
             self._moments[i] += basis_eval**2
 
-    def plot(self, ax=None, true_func=None, ylim=None, error_bar=1):
-        coeffs = self.normalize()
-        x = np.linspace(self._min, self._max, 100)
-        y = np.zeros_like(x, dtype=np.object_)
-        for i, coef in enumerate(coeffs):
-            y += coef * self.evaluate_basis(x, i)
+    def plot(self, ax=None, true_func=None, ylim=None, error_bar=1, x=None, y=None):
+        if y is None:
+            coeffs = self.normalize()
+            print(coeffs)
+            x = np.linspace(self._min, self._max, 100)
+            y = np.zeros_like(x, dtype=np.object_)
+            for i, coef in enumerate(coeffs):
+                y += coef * self.evaluate_basis(x, i)
         if ax is None:
             plotter = plt
             if ylim:
@@ -228,6 +230,22 @@ class PiecewiseOrthoBezierReg(FETRegressor):
         for (lower, upper), regressor in zip(it.pairwise(self._edges), self._regs):
             if x >= lower and x <= upper:
                 return regressor.evaluate_basis(x, i)
+
+    def plot(self, ax=None, true_func=None, ylim=None, error_bar=1):
+        coeffs_set = []
+        for reg in self._regs:
+            coeffs_set.append(reg.normalize())
+        x = np.linspace(self._min, self._max, 1000)
+        y = np.zeros_like(x, dtype=np.object_)
+        for val in x:
+            for (lower, upper), reg, coeffs in zip(
+                it.pairwise(self._edges), self._regs, coeffs_set
+            ):
+                if val >= lower and val <= upper:
+                    for i, coef in enumerate(coeffs):
+                        y += coef * reg.evaluate_basis(x, i)
+                    break
+        super().plot(ax, true_func, ylim, error_bar, x, y)
 
 
 class OrthoBezierRegressor(BezierRegressor):
