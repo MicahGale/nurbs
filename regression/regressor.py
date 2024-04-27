@@ -43,12 +43,14 @@ class HistogramRegressor(Regressor):
 
     def _internal_score(self, value):
         index = int((value - self._min) / self._bin_width)
+        if index >= len(self._coeffs):
+            return
         self._coeffs[index] += 1
 
     def normalize(self):
         return np.array(self._coeffs) / self._n
 
-    def plot(self, ax=None):
+    def plot(self, ax=None, **kwargs):
         coeffs = self.normalize()
         if ax is None:
             plotter = plt
@@ -76,12 +78,14 @@ class FETRegressor(Regressor):
     def evaluate_basis(self, x, i):
         pass
 
-    def normalize(self):
+    def normalize(self, n=None):
         norms = np.array([n if n > 0 else 1.0 for n in self._norms])
-        coeffs = self._coeffs / (self._norms * self._n)
-        squares = self._moments / (self._norms * self._n)
+        if n is None:
+            n = self._n if self._n > 0 else 1
+        coeffs = self._coeffs / (self._norms * n)
+        squares = self._moments / (self._norms * n)
         ret = [
-            ufloat(float(coef), float(1 / (self._n - 1) * np.sqrt(square - coef**2)))
+            ufloat(float(coef), float(1 / (n - 1) * np.sqrt(square - coef**2)))
             for coef, square in zip(coeffs, squares)
         ]
         return ret
@@ -92,10 +96,11 @@ class FETRegressor(Regressor):
             self._coeffs[i] += basis_eval
             self._moments[i] += basis_eval**2
 
-    def plot(self, ax=None, true_func=None, ylim=None, error_bar=1, x=None, y=None):
+    def plot(
+        self, ax=None, true_func=None, ylim=None, error_bar=1, x=None, y=None, n=None
+    ):
         if y is None:
-            coeffs = self.normalize()
-            print(coeffs)
+            coeffs = self.normalize(n)
             x = np.linspace(self._min, self._max, 100)
             y = np.zeros_like(x, dtype=np.object_)
             for i, coef in enumerate(coeffs):
@@ -114,7 +119,7 @@ class FETRegressor(Regressor):
         legends = [f"Coeff rel-error: {self.rel_err():.2g}"]
         if true_func:
             legends.append(f"R^2: {self.r2(true_func):.2g}")
-        plotter.legend(labels=legends)
+            plotter.legend(labels=legends)
         plotter.errorbar(mean, 0.3, xerr=std, fmt="k^", capsize=3)
         lines.append(plotter.plot(x, [v.n for v in y], "b-"))
         for i in range(1, error_bar + 1):
@@ -234,16 +239,16 @@ class PiecewiseOrthoBezierReg(FETRegressor):
     def plot(self, ax=None, true_func=None, ylim=None, error_bar=1):
         coeffs_set = []
         for reg in self._regs:
-            coeffs_set.append(reg.normalize())
-        x = np.linspace(self._min, self._max, 1000)
+            coeffs_set.append(reg.normalize(n=self._n))
+        x = np.linspace(self._min, self._max, 100)
         y = np.zeros_like(x, dtype=np.object_)
-        for val in x:
+        for x_idx, val in enumerate(x):
             for (lower, upper), reg, coeffs in zip(
                 it.pairwise(self._edges), self._regs, coeffs_set
             ):
                 if val >= lower and val <= upper:
                     for i, coef in enumerate(coeffs):
-                        y += coef * reg.evaluate_basis(x, i)
+                        y[x_idx] += coef * reg.evaluate_basis(val, i)
                     break
         super().plot(ax, true_func, ylim, error_bar, x, y)
 
