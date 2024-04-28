@@ -118,9 +118,10 @@ class FETRegressor(Regressor):
         std = self.std()
         legends = [f"Coeff rel-error: {self.rel_err():.2g}"]
         if true_func:
+            plotter.plot(x, true_func(x), "k--", label="true curve")
             legends.append(f"R^2: {self.r2(true_func):.2g}")
-            plotter.legend(labels=legends)
-        plotter.errorbar(mean, 0.3, xerr=std, fmt="k^", capsize=3)
+            plotter.legend(labels=legends, loc="upper right")
+        plotter.errorbar(mean, 0.03, xerr=std, fmt="k^", capsize=3)
         lines.append(plotter.plot(x, [v.n for v in y], "b-"))
         for i in range(1, error_bar + 1):
             lines.append(
@@ -222,6 +223,28 @@ class PiecewiseOrthoBezierReg(FETRegressor):
     @staticmethod
     def _generate_basis_function(n, i):
         pass
+
+    def evaluate(self, x):
+        coeffs_set = []
+        for reg in self._regs:
+            coeffs_set.append(reg.normalize(n=self._n))
+        y = np.zeros_like(x)
+        for x_idx, val in enumerate(x):
+            for (lower, upper), reg, coeffs in zip(
+                it.pairwise(self._edges), self._regs, coeffs_set
+            ):
+                if val >= lower and val <= upper:
+                    for i, coef in enumerate(coeffs):
+                        y[x_idx] += coef.n * reg.evaluate_basis(val, i)
+                    break
+        return y
+
+    def rel_err(self):
+        coeffs = self.normalize()
+        coeffs_set = []
+        for reg in self._regs:
+            coeffs_set.append(reg.normalize(n=self._n))
+        return np.array([c.s for c in it.chain(*coeffs_set)]).mean()
 
     def evaluate_basis(self, x, i):
         if isinstance(x, (float, int)):
