@@ -11,9 +11,7 @@ import time
 
 def normal(x, mu, sigma):
     return (
-        1
-        / (np.sqrt(2 * np.pi * sigma**2))
-        * np.exp(-((x - mu) ** 2) / (2 * sigma**2))
+        1 / (np.sqrt(2 * np.pi * sigma**2)) * np.exp(-((x - mu) ** 2) / (2 * sigma**2))
     )
 
 
