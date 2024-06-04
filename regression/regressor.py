@@ -180,7 +180,31 @@ class FETRegressor(Regressor):
         return np.array([c.s for c in coeffs]).mean()
 
 
-class BezierRegressor(FETRegressor):
+class NonOrthoFETRegressor(FETRegressor):
+    def __init__(self, x_min, x_max, n_bases):
+        super().__init__(x_min, x_max, n_bases)
+        self._norms = np.zeros((n_bases, n_bases))
+        x = np.linspace(x_min, x_max, 1000)
+        for x_idx in range(n_bases):
+            for y_idx in range(x_idx + 1):
+                inner_product = np.trapz(
+                    self.evaluate_basis(x, x_idx) * self.evaluate_basis(x, y_idx), x
+                )
+                self._norms[x_idx][y_idx] = inner_product
+                self._norms[y_idx][x_idx] = inner_product
+        self._inv_norms = np.linalg.inv(self._norms)
+
+    def normalize(self, n=None):
+        if n is None:
+            n = self._n if self._n > 0 else 1
+        coeffs = self._coeffs / n
+        coeffs = np.matmul(self._inv_norms, coeffs)
+        # TODO figure std. dev
+        ret = [ufloat(float(coef), 0) for coef in coeffs]
+        return ret
+
+
+class BezierRegressor(NonOrthoFETRegressor):
     def __init__(self, x_min, x_max, order=3):
         bases = []
         for i in range(order + 1):

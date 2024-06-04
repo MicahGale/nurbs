@@ -26,7 +26,7 @@ sigma = 1.0
 def do_regression_series(func, inverse, name, min_x, max_x, ylim):
     regressors = [regressor.HistogramRegressor(min_x, max_x, bins)]
     for order in range(6):
-        regressors.append(regressor.OrthoBezierRegressor(min_x, max_x, (order + 1) * 2))
+        regressors.append(regressor.BezierRegressor(min_x, max_x, (order + 1) * 2))
 
     xs = np.linspace(min_x, max_x)
     fig, axes_rows = plt.subplots(5, 6, figsize=(30, 20))
@@ -47,7 +47,7 @@ def do_regression_series(func, inverse, name, min_x, max_x, ylim):
             ax.set_title(f"n={samples} order={(i+1)*2}")
         [r.reset() for r in regressors]
 
-    for ext in {"png", "svg"}:
+    for ext in {"png", "svg", "pdf"}:
         plt.savefig(f"{name}_regression.{ext}")
 
 
