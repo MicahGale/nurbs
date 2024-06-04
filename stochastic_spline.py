@@ -11,7 +11,9 @@ import time
 
 def normal(x, mu, sigma):
     return (
-        1 / (np.sqrt(2 * np.pi * sigma**2)) * np.exp(-((x - mu) ** 2) / (2 * sigma**2))
+        1
+        / (np.sqrt(2 * np.pi * sigma**2))
+        * np.exp(-((x - mu) ** 2) / (2 * sigma**2))
     )
 
 
@@ -30,7 +32,9 @@ def do_regression_series(func, inverse, name, min_x, max_x, ylim):
 
     xs = np.linspace(min_x, max_x)
     fig, axes_rows = plt.subplots(5, 6, figsize=(30, 20))
-    for samples, ax_row in zip([5, 10, 100, 10_00, 10_000], axes_rows):
+    for row_idx, (samples, ax_row) in enumerate(
+        zip([5, 10, 100, 10_00, 10_000], axes_rows)
+    ):
         print(samples)
         for i in range(samples):
             x = inverse()
@@ -38,14 +42,26 @@ def do_regression_series(func, inverse, name, min_x, max_x, ylim):
                 continue
             for regr in regressors:
                 regr.score(x)
-        for i, (r, ax) in enumerate(zip(regressors[1:], ax_row)):
+        for col_idx, (r, ax) in enumerate(zip(regressors[1:], ax_row)):
             ax.plot(xs, func(xs), "k--", label="true curve")
             regressors[0].plot(
                 ax,
             )
             r.plot(ax, func, ylim, 5)
-            ax.set_title(f"n={samples} order={(i+1)*2}")
+            if col_idx == 0:
+                ax.set_ylabel(
+                    f"Samples = {samples:,g}",
+                    rotation=0,
+                    size=16,
+                    labelpad=100,
+                    fontweight="bold",
+                )
+            if row_idx == 0:
+                ax.set_title(
+                    f"Polynomial Order={(col_idx+1)*2}", size=16, fontweight="bold"
+                )
         [r.reset() for r in regressors]
+    fig.tight_layout()
 
     for ext in {"png", "svg", "pdf"}:
         plt.savefig(f"{name}_regression.{ext}")
