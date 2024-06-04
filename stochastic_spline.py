@@ -27,9 +27,11 @@ sigma = 1.0
 
 def do_regression_series(func, inverse, name, min_x, max_x, ylim):
     regressors = [regressor.HistogramRegressor(min_x, max_x, bins)]
-    for order in range(6):
-        regressors.append(regressor.BezierRegressor(min_x, max_x, (order + 1) * 2))
+    for order in range(3):
+        regressors.append(regressor.BezierRegressor(min_x, max_x, order * 6 + 2))
+        regressors.append(regressor.OrthoBezierRegressor(min_x, max_x, order  * 6 + 2))
 
+    print(regressors)
     xs = np.linspace(min_x, max_x)
     fig, axes_rows = plt.subplots(5, 6, figsize=(30, 20))
     for row_idx, (samples, ax_row) in enumerate(
@@ -57,8 +59,9 @@ def do_regression_series(func, inverse, name, min_x, max_x, ylim):
                     fontweight="bold",
                 )
             if row_idx == 0:
+                ortho = "Non-Ortho" if col_idx % 2 == 0 else "Ortho"
                 ax.set_title(
-                    f"Polynomial Order={(col_idx+1)*2}", size=16, fontweight="bold"
+                    f"{ortho} Order={int(col_idx / 2) * 6 + 2}", size=16, fontweight="bold"
                 )
         [r.reset() for r in regressors]
     fig.tight_layout()
