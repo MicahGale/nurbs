@@ -300,7 +300,7 @@ class PiecewiseOrthoBezierReg(FETRegressor):
         super().plot(ax, true_func, ylim, error_bar, x, y)
 
 
-class OrthoBezierRegressor(BezierRegressor):
+class OrthoBezierRegressor(FETRegressor):
     """
 
     Based on:
@@ -315,6 +315,13 @@ class OrthoBezierRegressor(BezierRegressor):
             bases.append(self._generate_basis_function(order, i))
         self._bases = bases
         super().__init__(x_min, x_max, order)
+    
+    def do_affine_transform(self, x):
+        if isinstance(x, float):
+            assert x >= self._min and x <= self._max
+        else:
+            assert (x >= self._min).all() and (x <= self._max).all()
+        return (x - self._min) / (self._max - self._min)
 
     @staticmethod
     def _generate_basis_function(n, i):
@@ -329,6 +336,9 @@ class OrthoBezierRegressor(BezierRegressor):
             return first_poly * value
 
         return ortho_bern
+    
+    def evaluate_basis(self, x, i):
+        return self._bases[i](self.do_affine_transform(x))
 
 
 class SplineRegressor(FETRegressor):
