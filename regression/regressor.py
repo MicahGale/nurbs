@@ -222,6 +222,8 @@ class BezierRegressor(NonOrthoFETRegressor):
     @staticmethod
     def _generate_basis_function(n, i):
         assert n >= i
+        if n == 0:
+            return lambda t: t**0.0
         binom_coeff = scipy.special.binom(n, i)
         return lambda t: binom_coeff * t**i * (1 - t) ** (n - i)
 
