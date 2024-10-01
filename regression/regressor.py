@@ -71,7 +71,7 @@ class FETRegressor(Regressor):
         norms = []
         x = np.linspace(x_min, x_max, 1000)
         for i in range(self._dim):
-            norms.append(np.trapz(self.evaluate_basis(x, i) ** 2, x))
+            norms.append(np.trapezoid(self.evaluate_basis(x, i) ** 2, x))
         self._norms = np.array(norms)
 
     @abstractmethod
@@ -187,7 +187,7 @@ class NonOrthoFETRegressor(FETRegressor):
         x = np.linspace(x_min, x_max, 1000)
         for x_idx in range(n_bases):
             for y_idx in range(x_idx + 1):
-                inner_product = np.trapz(
+                inner_product = np.trapezoid(
                     self.evaluate_basis(x, x_idx) * self.evaluate_basis(x, y_idx), x
                 )
                 self._norms[x_idx][y_idx] = inner_product
