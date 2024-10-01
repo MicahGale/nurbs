@@ -229,6 +229,17 @@ class BezierRegressor(NonOrthoFETRegressor):
         return self._bases[i](self.do_affine_transform(x))
 
 
+class MultiOrderRegressor(BezierRegressor):
+
+    def __init__(self, x_min, x_max, order=3):
+        bases = []
+        for n in range(order + 1):
+            for i in range(n + 1):
+                bases.append(self._generate_basis_function(n, i))
+        self._bases = bases
+        super(BezierRegressor, self).__init__(x_min, x_max, len(self._bases))
+
+
 class PiecewiseOrthoBezierReg(FETRegressor):
     def __init__(self, edges, order=3):
         regs = []
@@ -315,7 +326,7 @@ class OrthoBezierRegressor(FETRegressor):
             bases.append(self._generate_basis_function(order, i))
         self._bases = bases
         super().__init__(x_min, x_max, order)
-    
+
     def do_affine_transform(self, x):
         if isinstance(x, float):
             assert x >= self._min and x <= self._max
@@ -336,7 +347,7 @@ class OrthoBezierRegressor(FETRegressor):
             return first_poly * value
 
         return ortho_bern
-    
+
     def evaluate_basis(self, x, i):
         return self._bases[i](self.do_affine_transform(x))
 
