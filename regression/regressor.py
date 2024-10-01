@@ -236,8 +236,7 @@ class MultiOrderRegressor(BezierRegressor):
     def __init__(self, x_min, x_max, order=3):
         bases = []
         for n in range(order + 1):
-            for i in range(n + 1):
-                bases.append(self._generate_basis_function(n, i))
+            bases.append(self._generate_basis_function(n, 0))
         self._bases = bases
         super(BezierRegressor, self).__init__(x_min, x_max, len(self._bases))
 
