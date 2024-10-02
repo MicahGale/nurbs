@@ -11,9 +11,7 @@ import time
 
 def normal(x, mu, sigma):
     return (
-        1
-        / (np.sqrt(2 * np.pi * sigma**2))
-        * np.exp(-((x - mu) ** 2) / (2 * sigma**2))
+        1 / (np.sqrt(2 * np.pi * sigma**2)) * np.exp(-((x - mu) ** 2) / (2 * sigma**2))
     )
 
 
@@ -29,7 +27,7 @@ def do_regression_series(func, inverse, name, min_x, max_x, ylim):
     regressors = [regressor.HistogramRegressor(min_x, max_x, bins)]
     for order in range(3):
         regressors.append(regressor.BezierRegressor(min_x, max_x, order * 6 + 2))
-        regressors.append(regressor.OrthoBezierRegressor(min_x, max_x, order  * 6 + 2))
+        regressors.append(regressor.OrthoBezierRegressor(min_x, max_x, order * 6 + 2))
 
     print(regressors)
     xs = np.linspace(min_x, max_x)
@@ -61,7 +59,9 @@ def do_regression_series(func, inverse, name, min_x, max_x, ylim):
             if row_idx == 0:
                 ortho = "Non-Ortho" if col_idx % 2 == 0 else "Ortho"
                 ax.set_title(
-                    f"{ortho} Order={int(col_idx / 2) * 6 + 2}", size=16, fontweight="bold"
+                    f"{ortho} Order={int(col_idx / 2) * 6 + 2}",
+                    size=16,
+                    fontweight="bold",
                 )
         [r.reset() for r in regressors]
     fig.tight_layout()
