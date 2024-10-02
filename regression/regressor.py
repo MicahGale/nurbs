@@ -179,6 +179,14 @@ class FETRegressor(Regressor):
         coeffs = self.normalize()
         return np.array([c.s for c in coeffs]).mean()
 
+    def analytic_inner_prod(self, func):
+        x = np.linspace(self._min, self._max, 10_000)
+        for i in range(self._dim):
+            inner = np.trapezoid(func(x) * self.evaluate_basis(x, i), x)
+            self._coeffs[i] = inner
+            self._moments[i] = inner**2
+        self._n = 2
+
 
 class NonOrthoFETRegressor(FETRegressor):
     def __init__(self, x_min, x_max, n_bases):
