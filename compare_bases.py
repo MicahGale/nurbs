@@ -3,6 +3,7 @@ import itertools as it
 import matplotlib.pyplot as plt
 import numpy as np
 import regression as rg
+import scipy
 import matplotlib
 
 matplotlib.rc("font", size=16)
@@ -44,34 +45,26 @@ def run_regression(rgrs, inverse, nums):
 
 
 def get_rmse(rgr, true_func, min_x, max_x):
-    x = np.linspace(min_x, max_x)
+    x = np.linspace(min_x, max_x, 1000)
     return np.sqrt(
         np.trapezoid((true_func(x) - rgr.evaluate(x)) ** 2, x) / (max_x - min_x)
     )
 
 
 def converge_order():
-    orders = range(2, 25)
+    orders = range(2, 30)
     fig = plt.figure(figsize=(16, 9))
-    rgrs = generate_regressors(0, 10, orders)
     norm = lambda x: normal(x, mu, sigma)
-    for rgr in rgrs[1:]:
-        rgr.analytic_inner_prod(norm)
-    no_rmses = []
-    o_rmses = []
-    multi_rmses = []
-    for non_ortho, ortho, multi in it.batched(rgrs[1:], 3):
-        no_rmses.append(get_rmse(non_ortho, norm, 0, 10) * 100)
-        o_rmses.append(get_rmse(ortho, norm, 0, 10) * 100)
-        multi_rmses.append(get_rmse(multi, norm, 0, 10) * 100)
-    plt.semilogy(orders, no_rmses, label="Non-Orthogonal Bernstein")
-    plt.plot(orders, o_rmses, label="Orthonormal Bernstein")
-    plt.plot(orders, multi_rmses, label="Multi-order Bernstein")
-    plt.xlabel("Order of Polynomial")
-    plt.ylabel("Root Mean Squared Error [%]")
-    plt.legend()
-    for ext in {"png", "svg", "pdf"}:
-        plt.savefig(f"order.{ext}")
+    rmses = []
+    x = np.linspace(0, 10, 10_000)
+    for order in orders:
+        taylor = scipy.interpolate.approximate_taylor_polynomial(norm, mu, order, 5)
+        rmses.append(np.sqrt(np.trapezoid((norm(x) - taylor(x - 5)) ** 2) / 10) * 100)
+    plt.semilogy(orders, rmses)
+    plt.xlabel("Polynomial order")
+    plt.ylabel("Truncation Error [%]")
+    for ext in {"svg", "png", "pdf"}:
+        plt.savefig(f"order_taylor.{ext}")
 
 
 def converge_samples():
@@ -98,4 +91,4 @@ def converge_samples():
         plt.savefig(f"samples.{ext}")
 
 
-converge_samples()
+converge_order()
