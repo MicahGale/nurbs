@@ -6,8 +6,10 @@ import regression as rg
 import scipy
 import matplotlib
 
-matplotlib.rc("font", size=16)
+from labellines import labelLines
 
+matplotlib.rc("font", size=16)
+plt.style.use('tableau-colorblind10')
 
 def normal(x, mu, sigma):
     return (
@@ -55,16 +57,31 @@ def converge_order():
     orders = range(2, 30)
     fig = plt.figure(figsize=(16, 9))
     norm = lambda x: normal(x, mu, sigma)
+    rgrs = generate_regressors(0, 10, orders)
     rmses = []
     x = np.linspace(0, 10, 10_000)
     for order in orders:
         taylor = scipy.interpolate.approximate_taylor_polynomial(norm, mu, order, 5)
         rmses.append(np.sqrt(np.trapezoid((norm(x) - taylor(x - 5)) ** 2) / 10) * 100)
-    plt.semilogy(orders, rmses)
+    for rgr in rgrs[1:]:
+        rgr.analytic_inner_prod(norm)
+    no_rmses = []
+    o_rmses = []
+    multi_rmses = []
+    for non_ortho, ortho, multi in it.batched(rgrs[1:], 3):
+        no_rmses.append(get_rmse(non_ortho, norm, 0, 10) * 100)
+        o_rmses.append(get_rmse(ortho, norm, 0, 10) * 100)
+        multi_rmses.append(get_rmse(multi, norm, 0, 10) * 100)
+    plt.semilogy(orders, rmses, label="Taylor Polynomial")
+    plt.semilogy(orders, no_rmses, label = "Non orthogonal Bernstein")
+    plt.semilogy(orders, o_rmses, label="Orthonormal Bernstein")
+    plt.semilogy(orders, multi_rmses, label="Multi-order Bernstein")
+    plt.plot(plt.xlim(), [0.1, 0.1], "k--")
     plt.xlabel("Polynomial order")
     plt.ylabel("Truncation Error [%]")
+    labelLines(plt.gca().get_lines(), align=False)
     for ext in {"svg", "png", "pdf"}:
-        plt.savefig(f"order_taylor.{ext}")
+        plt.savefig(f"order_all.{ext}")
 
 
 def converge_samples():
