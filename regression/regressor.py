@@ -183,7 +183,7 @@ class FETRegressor(Regressor):
         x = np.linspace(self._min, self._max, 10_000)
         for i in range(self._dim):
             inner = np.trapezoid(func(x) * self.evaluate_basis(x, i), x)
-            self._coeffs[i] = inner
+            self._coeffs[i] = 2 * inner
             self._moments[i] = inner**2
         self._n = 2
 
