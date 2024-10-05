@@ -2,6 +2,7 @@ import copy
 import itertools as it
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import regression as rg
 import scipy
 from scipy.optimize import curve_fit
@@ -10,7 +11,8 @@ import matplotlib
 from labellines import labelLines
 
 matplotlib.rc("font", size=16)
-plt.style.use('tableau-colorblind10')
+plt.style.use("tableau-colorblind10")
+
 
 def normal(x, mu, sigma):
     return (
@@ -63,7 +65,9 @@ def converge_order():
     rmses = []
     x = np.linspace(0, 10, 10_000)
     for order in orders:
-        taylor = scipy.interpolate.approximate_taylor_polynomial(norm, mu, order, 10, 25)
+        taylor = scipy.interpolate.approximate_taylor_polynomial(
+            norm, mu, order, 10, 25
+        )
         rmses.append(np.sqrt(np.trapezoid((norm(x) - taylor(x - 5)) ** 2) / 10) * 100)
     for rgr in rgrs[1:]:
         rgr.analytic_inner_prod(norm)
@@ -78,7 +82,7 @@ def converge_order():
     index = list(orders).index(14)
     print(o_rmses[index])
     plt.semilogy(orders, rmses, label="Taylor Polynomial")
-    plt.semilogy(orders, no_rmses, label = "Non orthogonal Bernstein")
+    plt.semilogy(orders, no_rmses, label="Non orthogonal Bernstein")
     plt.semilogy(orders, o_rmses, label="Orthonormal Bernstein")
     plt.semilogy(orders, multi_rmses, label="Multi-order Bernstein")
     plt.plot(plt.xlim(), [0.1, 0.1], "k--")
@@ -92,33 +96,55 @@ def converge_order():
 def converge_samples():
     rgrs = generate_regressors(0, 10, [14])
     fig = plt.figure(figsize=(16, 9))
-    samples = np.logspace(1, 5, 5, dtype=int)
+    samples = np.logspace(1, 6, 20, dtype=int)
     new_rgrs = run_regression(rgrs, lambda: np.random.normal(mu, sigma), samples)
-    samples.dtype = float
     norm = lambda x: normal(x, mu, sigma)
     no_rmses = []
     o_rmses = []
     multi_rmses = []
-    def poly_fit(x, a, b, c):
-        return a*x**2 + b*x + c
+
+    def poly_fit(x, a, b):
+        return a * x**b + 1
+
     for num_samples, rgrs in new_rgrs.items():
         non_ortho, ortho, multi = rgrs[1:]
         no_rmses.append(get_rmse(non_ortho, norm, 0, 10) * 100)
         o_rmses.append(get_rmse(ortho, norm, 0, 10) * 100)
         multi_rmses.append(get_rmse(multi, norm, 0, 10) * 100)
-    params, cov = curve_fit(poly_fit, samples, o_rmses)
-    print(params)
-    bound = lambda x: poly_fit(x, *params)
-    plt.loglog(samples, bound(samples), "k--")
-    #plt.loglog(samples, np.array(no_rmses) / O_14_LIMIT, label="Non-Orthogonal Bernstein")
-    plt.plot(samples, np.array(o_rmses) / O_14_LIMIT, label="Orthonormal Bernstein")
-    #plt.plot(samples, np.array(multi_rmses) / O_14_LIMIT, label="Multi-Order Bernstein")
-    plt.plot(plt.xlim(), [1,1], "k--")
+
+    df = pd.DataFrame(
+        {
+            "samples": samples,
+            "non_ortho": no_rmses,
+            "ortho": o_rmses,
+            "multi": multi_rmses,
+        }
+    )
+    df.to_excel("rmse_data.xlsx")
+    for rmses, name in [
+        (no_rmses, "Non-orthogonal Bernstein"),
+        (o_rmses, "Orthonormal Bernstein"),
+        (multi_rmses, "Multi-order Bernstein"),
+    ]:
+        y = np.array(rmses) / O_14_LIMIT
+        lines = plt.plot(samples, y, label=name)
+        if "Non" in name:
+            params, cov = curve_fit(poly_fit, samples, y)
+            print(params)
+            bound = lambda x: poly_fit(x, *params)
+            label = f"Non-ortho: ${params[0]:.1g}x^{{{params[1]:.1g}}} + 1.0$"
+            residuals = y - bound(samples)
+            ss_res = np.sum(residuals**2)
+            ss_tot = np.sum((y - np.mean(y)) ** 2)
+            r2 = 1 - (ss_res / ss_tot)
+            label += f" $R^2={r2:.2g}$"
+            plt.loglog(
+                samples, bound(samples), "--", color=lines[0].get_color(), label=label
+            )
+    plt.plot(plt.xlim(), [1, 1], "k--")
     plt.xlabel("Number of samples")
     plt.ylabel("Monte Carlo RMSE / Analytical RMSE")
     plt.legend()
-    plt.show()
-    return
     for ext in {"png", "svg", "pdf"}:
         plt.savefig(f"samples.{ext}")
 
