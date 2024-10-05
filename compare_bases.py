@@ -121,18 +121,18 @@ def converge_samples():
         }
     )
     df.to_excel("rmse_data.xlsx")
-    for rmses, name in [
-        (no_rmses, "Non-orthogonal Bernstein"),
-        (o_rmses, "Orthonormal Bernstein"),
-        (multi_rmses, "Multi-order Bernstein"),
+    for rmses, name, symbol in [
+        (no_rmses, "Non-orthogonal Bernstein", "<"),
+        (o_rmses, "Orthonormal Bernstein", ">"),
+        (multi_rmses, "Multi-order Bernstein", "^"),
     ]:
         y = np.array(rmses) / O_14_LIMIT
-        lines = plt.plot(samples, y, label=name)
+        lines = plt.plot(samples, y, symbol, label=name)
         if "Non" in name:
             params, cov = curve_fit(poly_fit, samples, y)
             print(params)
-            bound = lambda x: poly_fit(x, *params)
-            label = f"Non-ortho: ${params[0]:.1g}x^{{{params[1]:.1g}}} + 1.0$"
+            bound = lambda x: (poly_fit(x, *params))
+            label = f"Non-ortho: ${params[0]:.1g}n^{{{params[1]:.1g}}} + 1.0$"
             residuals = y - bound(samples)
             ss_res = np.sum(residuals**2)
             ss_tot = np.sum((y - np.mean(y)) ** 2)
