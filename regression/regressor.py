@@ -148,6 +148,30 @@ class FETRegressor(Regressor):
             lines.append(plt.plot(x, self.evaluate_basis(x, i)))
         return lines
 
+    def evaluate_by_basis(self, x):
+        coeffs = self.normalize()
+        ret = []
+        for (
+            i,
+            coef,
+        ) in enumerate(coeffs):
+            ret.append(coef.n * self.evaluate_basis(x, i))
+        return ret
+
+    def plot_basis_contrib(self, x, ax=None, ylim=None):
+        basis_data = self.evaluate_by_basis(x)
+        if ax is None:
+            plotter = plt
+            if ylim:
+                plotter.ylim(ylim)
+        else:
+            plotter = ax
+            if ylim:
+                plotter.set_ylim(ylim)
+        for i, basis_datum in enumerate(basis_data):
+            plotter.plot(x, basis_datum, "--", label=f"$\psi_{i}$")
+        self.plot(ax, ylim=ylim)
+
     def plot_sum_bases(self):
         x = np.linspace(self._min, self._max, 100)
         y = np.zeros_like(x)

@@ -47,7 +47,8 @@ def do_regression_series(func, inverse, name, min_x, max_x, ylim):
             regressors[0].plot(
                 ax,
             )
-            r.plot(ax, func, ylim, 5)
+            # r.plot(ax, func, ylim, 5)
+            r.plot_basis_contrib(xs, ax, ylim)
             if col_idx == 0:
                 ax.set_ylabel(
                     f"Samples = {samples:,g}",
@@ -65,7 +66,7 @@ def do_regression_series(func, inverse, name, min_x, max_x, ylim):
                 )
         [r.reset() for r in regressors]
     fig.tight_layout()
-
+    plt.show()
     for ext in {"png", "svg", "pdf"}:
         plt.savefig(f"{name}_regression.{ext}")
 

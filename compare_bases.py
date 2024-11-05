@@ -27,7 +27,8 @@ O_14_LIMIT = 0.07651166303158025
 
 
 def generate_regressors(min_x, max_x, orders):
-    regressors = [rg.HistogramRegressor(min_x, max_x, bins)]
+    # regressors = [rg.HistogramRegressor(min_x, max_x, bins)]
+    regressors = []
     for order in orders:
         regressors.append(rg.BezierRegressor(min_x, max_x, order))
         regressors.append(rg.OrthoBezierRegressor(min_x, max_x, order))
