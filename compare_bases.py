@@ -1,12 +1,16 @@
 import copy
+import collections as co
 import itertools as it
 import matplotlib.pyplot as plt
+import multiprocessing
 import numpy as np
 import pandas as pd
 import regression as rg
+import pickle
 import scipy
 from scipy.optimize import curve_fit
 import matplotlib
+from threading import Thread
 
 from labellines import labelLines
 
@@ -32,7 +36,6 @@ def generate_regressors(min_x, max_x, orders):
     for order in orders:
         regressors.append(rg.BezierRegressor(min_x, max_x, order))
         regressors.append(rg.OrthoBezierRegressor(min_x, max_x, order))
-        regressors.append(rg.MultiOrderRegressor(min_x, max_x, order))
     return regressors
 
 
@@ -95,30 +98,52 @@ def converge_order():
 
 
 def converge_samples():
-    rgrs = generate_regressors(0, 10, [14])
+    rgrs_groups = co.deque()
+    handled_groups = co.deque()
+    samples = np.logspace(1, 2, 20, dtype=int)
+    for i in range(10):
+        rgrs_groups.append(generate_regressors(0, 10, [14]))
+
+    def regress(i):
+        while True:
+            try:
+                rgrs = rgrs_groups.popleft()
+                print(f"Thread {i}")
+                handled_groups.append(
+                    run_regression(rgrs, lambda: np.random.normal(mu, sigma), samples)
+                )
+            except IndexError:
+                return
+
+    thread_pool = []
+    for i in range(12):
+        t = Thread(target=regress, args=[i])
+        t.start()
+        thread_pool.append(t)
+    for thread in thread_pool:
+        thread.join()
     fig = plt.figure(figsize=(16, 9))
-    samples = np.logspace(1, 6, 20, dtype=int)
-    new_rgrs = run_regression(rgrs, lambda: np.random.normal(mu, sigma), samples)
     norm = lambda x: normal(x, mu, sigma)
     no_rmses = []
     o_rmses = []
     multi_rmses = []
+    x_samples = []
 
     def poly_fit(x, a, b):
         return a * x**b + 1
 
-    for num_samples, rgrs in new_rgrs.items():
-        non_ortho, ortho, multi = rgrs[1:]
-        no_rmses.append(get_rmse(non_ortho, norm, 0, 10) * 100)
-        o_rmses.append(get_rmse(ortho, norm, 0, 10) * 100)
-        multi_rmses.append(get_rmse(multi, norm, 0, 10) * 100)
+    for new_rgrs in handled_groups:
+        for num_samples, rgrs in new_rgrs.items():
+            non_ortho, ortho, multi = rgrs
+            no_rmses.append(get_rmse(non_ortho, norm, 0, 10) * 100)
+            o_rmses.append(get_rmse(ortho, norm, 0, 10) * 100)
+            x_samples.append(num_samples)
 
     df = pd.DataFrame(
         {
-            "samples": samples,
+            "samples": x_samples,
             "non_ortho": no_rmses,
             "ortho": o_rmses,
-            "multi": multi_rmses,
         }
     )
     df.to_excel("rmse_data.xlsx")
@@ -128,13 +153,13 @@ def converge_samples():
         (multi_rmses, "Multi-order Bernstein", "^"),
     ]:
         y = np.array(rmses) / O_14_LIMIT
-        lines = plt.plot(samples, y, symbol, label=name)
+        lines = plt.plot(x_samples, y, symbol, label=name)
         if "Non" in name:
-            params, cov = curve_fit(poly_fit, samples, y)
+            params, cov = curve_fit(poly_fit, x_samples, y)
             print(params)
             bound = lambda x: (poly_fit(x, *params))
             label = f"Non-ortho: ${params[0]:.1g}n^{{{params[1]:.1g}}} + 1.0$"
-            residuals = y - bound(samples)
+            residuals = y - bound(x_samples)
             ss_res = np.sum(residuals**2)
             ss_tot = np.sum((y - np.mean(y)) ** 2)
             r2 = 1 - (ss_res / ss_tot)
@@ -142,12 +167,12 @@ def converge_samples():
             plt.loglog(
                 samples, bound(samples), "--", color=lines[0].get_color(), label=label
             )
-    plt.plot(plt.xlim(), [1, 1], "k--")
-    plt.xlabel("Number of samples")
-    plt.ylabel("Monte Carlo RMSE / Analytical RMSE")
-    plt.legend()
-    for ext in {"png", "svg", "pdf"}:
-        plt.savefig(f"samples.{ext}")
+        plt.plot(plt.xlim(), [1, 1], "k--")
+        plt.xlabel("Number of samples")
+        plt.ylabel("Monte Carlo RMSE / Analytical RMSE")
+        plt.legend()
+        for ext in {"png", "svg", "pdf"}:
+            plt.savefig(f"samples.{ext}")
 
 
 converge_samples()
