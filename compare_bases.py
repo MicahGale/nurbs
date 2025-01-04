@@ -100,8 +100,8 @@ def converge_order():
 def converge_samples():
     rgrs_groups = co.deque()
     handled_groups = co.deque()
-    samples = np.logspace(1, 2, 20, dtype=int)
-    for i in range(10):
+    samples = np.logspace(1, 5, 20, dtype=int)
+    for i in range(100):
         rgrs_groups.append(generate_regressors(0, 10, [14]))
 
     def regress(i):
