@@ -3,6 +3,7 @@ import collections as co
 import itertools as it
 import matplotlib.pyplot as plt
 import multiprocessing
+import math
 import numpy as np
 import pandas as pd
 import regression as rg
@@ -59,6 +60,14 @@ def get_rmse(rgr, true_func, min_x, max_x):
     return np.sqrt(
         np.trapezoid((true_func(x) - rgr.evaluate(x)) ** 2, x) / (max_x - min_x)
     )
+
+def taylor_normal(mu, sigma, order):
+    coeffs = [(-1)**k/(2**k * math.factorial(k) * (2*k + 1)**2) for k in range(order + 1)]
+    def series(x):
+        z = ( x - mu) /sigma
+        return 1/np.sqrt(2*np.pi * sigma**2)*sum([coeff * z **(2*k) for k, coeff in enumerate(coeffs)])
+    return series
+
 
 
 def converge_order():
