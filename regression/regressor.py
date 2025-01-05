@@ -385,6 +385,41 @@ class OrthoBezierRegressor(FETRegressor):
         return self._bases[i](self.do_affine_transform(x))
 
 
+class LegendreRegressor(FETRegressor):
+    def __init__(self, x_min, x_max, order=3):
+        bases = []
+        for i in range(order + 1):
+            bases.append(self._generate_basis_function(i))
+        self._bases = bases
+        super().__init__(x_min, x_max, order)
+
+    def do_affine_transform(self, x):
+        if isinstance(x, float):
+            assert x >= self._min and x <= self._max
+        else:
+            assert (x >= self._min).all() and (x <= self._max).all()
+        mid_point = (self._max + self._min) / 2
+        width = self._max - self._min
+        return (x - mid_point) * 2 / width
+
+    @staticmethod
+    def _generate_basis_function(n):
+        first_ratio = 1 / 2**n
+        binomials = [scipy.special.binom(n, k) ** 2 for k in range(0, n + 1)]
+
+        def legendre(t):
+            terms = [
+                binom * (t - 1) ** (n - k) * (t + 1) ** k
+                for k, binom in enumerate(binomials)
+            ]
+            return first_ratio * sum(terms)
+
+        return legendre
+
+    def evaluate_basis(self, x, i):
+        return self._bases[i](self.do_affine_transform(x))
+
+
 class SplineRegressor(FETRegressor):
     def __init__(self, x_min, x_max, n_bins, order=3):
         self._n_bins = n_bins
