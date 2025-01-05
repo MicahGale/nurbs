@@ -46,20 +46,39 @@ def get_rmse(rgr, true_func, min_x, max_x):
     )
 
 
-def plot(rgr, anal_rgr):
+def plot(rgrs, anal_rgr):
     norm = lambda x: normal(x, mu, sigma)
-    rmse_x = []
-    stoc_rmses = []
-    anal_rmses = []
-    for i in range(1, 11):
-        rmse_x.append(i - 1 / 2)
-        stoc_rmses.append(get_rmse(rgr, norm, i - 1, i) * 100)
-        anal_rmses.append(get_rmse(anal_rgr, norm, i - 1, i) * 100)
+    stoc_rmse_trials = []
+    numer_rmse_trials = []
+    for rgr in rgrs:
+        rmse_x = []
+        stoc_rmses = []
+        anal_rmses = []
+        for i in range(1, 11):
+            rmse_x.append(i - 1 / 2)
+            integral = scipy.stats.norm.cdf(i) - scipy.stats.norm.cdf(i - 1)
+            stoc_rmses.append(get_rmse(rgr, norm, i - 1, i) * 100)
+            anal_rmses.append(get_rmse(anal_rgr, norm, i - 1, i) * 100)
+        stoc_rmse_trials.append(stoc_rmses)
+        numer_rmse_trials.append(anal_rmses)
+    stoc_rmse_trials = np.array(stoc_rmse_trials)
     fig, (ax, ax2) = plt.subplots(2, 1, figsize=(16, 9))
     x = np.linspace(0, 10, 100)
-    ax.plot(x, norm(x), "--", label="Normal distribution")
-    ax.plot(x, rgr.evaluate(x), label="Analytical FET")
+    twin_ax = ax.twinx()
+    twin_ax.violinplot(stoc_rmse_trials.T.tolist(), rmse_x, showmeans=True)
+    twin_ax.plot(
+        rmse_x,
+        stoc_rmse_trials.mean(axis=0),
+        "-.",
+        color="tab:blue",
+        label="Stochastic RMSE",
+    )
+    twin_ax.plot(rmse_x, anal_rmses, "-.^", label="numerical RMSE")
+    twin_ax.set_yscale("log")
+    twin_ax.set_ylabel("Absolute sub-domain RMSE [%]")
+    ax.plot(x, norm(x), "k--", label="Normal distribution")
     ax.plot(x, rgr.evaluate(x), label="stochastic FET")
+    ax.plot(x, anal_rgr.evaluate(x), label="Numerical FET")
     ax2.plot(x, norm(x) - rgr.evaluate(x), "b-.", label="absolute error")
     ax3 = ax2.twinx()
     ax3.semilogy(
@@ -68,18 +87,21 @@ def plot(rgr, anal_rgr):
         "k-.",
         label="relative error",
     )
-    labelLines(ax.get_lines(), align=False)
-    labelLines(ax2.get_lines(), align=False)
-    labelLines(ax3.get_lines(), align=False)
+    labelLines(ax.get_lines(), align=False, xvals=[3, 2, 8], yoffsets=-0.01)
+    labelLines(twin_ax.get_lines(), align=False, xvals=[1, 9], yoffsets=[0.08, 0.03])
+    labelLines(ax2.get_lines(), align=False, xvals=[2])
+    labelLines(ax3.get_lines(), align=False, xvals=[8])
     ax.set_xlabel("x")
     ax.set_ylabel("p(x)")
     ax2.set_ylabel("absolute error [-]")
     ax3.set_ylabel("relative error [-]")
-    plt.show()
     for ext in {"svg", "png", "pdf"}:
         plt.savefig(f"subdomain_rmse.{ext}")
 
 
 anal_rgr = do_analytic(14, lambda x: normal(x, mu, sigma))
-rgr = perform_regression(14, 1_00, lambda: np.random.normal(mu, sigma))
-plot(rgr, anal_rgr)
+rgrs = [
+    perform_regression(14, 1_000, lambda: np.random.normal(mu, sigma))
+    for _ in range(100)
+]
+plot(rgrs, anal_rgr)
