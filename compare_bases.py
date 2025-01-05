@@ -37,6 +37,7 @@ def generate_regressors(min_x, max_x, orders):
     for order in orders:
         regressors.append(rg.BezierRegressor(min_x, max_x, order))
         regressors.append(rg.OrthoBezierRegressor(min_x, max_x, order))
+        regressors.append(rg.LegendreRegressor(min_x, max_x, order))
     return regressors
 
 
@@ -61,13 +62,22 @@ def get_rmse(rgr, true_func, min_x, max_x):
         np.trapezoid((true_func(x) - rgr.evaluate(x)) ** 2, x) / (max_x - min_x)
     )
 
-def taylor_normal(mu, sigma, order):
-    coeffs = [(-1)**k/(2**k * math.factorial(k) * (2*k + 1)**2) for k in range(order + 1)]
-    def series(x):
-        z = ( x - mu) /sigma
-        return 1/np.sqrt(2*np.pi * sigma**2)*sum([coeff * z **(2*k) for k, coeff in enumerate(coeffs)])
-    return series
 
+def taylor_normal(mu, sigma, order):
+    coeffs = [
+        (-1) ** k / (2**k * math.factorial(k) * (2 * k + 1) ** 2)
+        for k in range(order + 1)
+    ]
+
+    def series(x):
+        z = (x - mu) / sigma
+        return (
+            1
+            / np.sqrt(2 * np.pi * sigma**2)
+            * sum([coeff * z ** (2 * k) for k, coeff in enumerate(coeffs)])
+        )
+
+    return series
 
 
 def converge_order():
@@ -76,32 +86,24 @@ def converge_order():
     norm = lambda x: normal(x, mu, sigma)
     rgrs = generate_regressors(0, 10, orders)
     rmses = []
-    x = np.linspace(0, 10, 10_000)
-    for order in orders:
-        taylor = scipy.interpolate.approximate_taylor_polynomial(
-            norm, mu, order, 10, 25
-        )
-        rmses.append(np.sqrt(np.trapezoid((norm(x) - taylor(x - 5)) ** 2) / 10) * 100)
-    for rgr in rgrs[1:]:
+    for rgr in rgrs:
         rgr.analytic_inner_prod(norm)
     no_rmses = []
     o_rmses = []
-    multi_rmses = []
-    for non_ortho, ortho, multi in it.batched(rgrs[1:], 3):
+    legen_rmses = []
+    for non_ortho, ortho, legen in it.batched(rgrs, 3):
         no_rmses.append(get_rmse(non_ortho, norm, 0, 10) * 100)
         o_rmses.append(get_rmse(ortho, norm, 0, 10) * 100)
-        multi_rmses.append(get_rmse(multi, norm, 0, 10) * 100)
+        legen_rmses.append(get_rmse(legen, norm, 0, 10) * 100)
     # get order 14
     index = list(orders).index(14)
-    print(o_rmses[index])
-    plt.semilogy(orders, rmses, label="Taylor Polynomial")
-    plt.semilogy(orders, no_rmses, label="Non orthogonal Bernstein")
-    plt.semilogy(orders, o_rmses, label="Orthonormal Bernstein")
-    plt.semilogy(orders, multi_rmses, label="Multi-order Bernstein")
+    plt.semilogy(orders, no_rmses, "-", label="Nonorthogonal Bernstein")
+    plt.plot(orders, o_rmses, "--", label="Orthogonal Bernstein")
+    plt.plot(orders, legen_rmses, "-.", label="Legendre")
     plt.plot(plt.xlim(), [0.1, 0.1], "k--")
     plt.xlabel("Polynomial order")
     plt.ylabel("Truncation Error [%]")
-    labelLines(plt.gca().get_lines(), align=False)
+    labelLines(plt.gca().get_lines(), align=False, xvals=[30] * 3)
     for ext in {"svg", "png", "pdf"}:
         plt.savefig(f"order_all.{ext}")
 
@@ -184,4 +186,4 @@ def converge_samples():
             plt.savefig(f"samples.{ext}")
 
 
-converge_samples()
+converge_order()
