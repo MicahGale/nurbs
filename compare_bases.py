@@ -145,7 +145,7 @@ def converge_samples():
 
     for new_rgrs in handled_groups:
         for num_samples, rgrs in new_rgrs.items():
-            non_ortho, ortho, multi = rgrs
+            non_ortho, ortho = rgrs
             no_rmses.append(get_rmse(non_ortho, norm, 0, 10) * 100)
             o_rmses.append(get_rmse(ortho, norm, 0, 10) * 100)
             x_samples.append(num_samples)
