@@ -100,10 +100,10 @@ def converge_order():
     plt.semilogy(orders, no_rmses, "-", label="Nonorthogonal Bernstein")
     plt.plot(orders, o_rmses, "--", label="Orthogonal Bernstein")
     plt.plot(orders, legen_rmses, "-.", label="Legendre")
-    plt.plot(plt.xlim(), [0.1, 0.1], "k--")
+    plt.plot(plt.xlim(), [0.1, 0.1], "k--", label="0.1% goal")
     plt.xlabel("Polynomial order")
     plt.ylabel("Truncation Error [%]")
-    labelLines(plt.gca().get_lines(), align=False, xvals=[30] * 3)
+    labelLines(plt.gca().get_lines(), align=False, xvals=[30] * 3 + [3])
     for ext in {"svg", "png", "pdf"}:
         plt.savefig(f"order_all.{ext}")
 
