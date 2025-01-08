@@ -58,9 +58,11 @@ def run_regression(rgrs, inverse, nums):
 
 def get_rmse(rgr, true_func, min_x, max_x):
     x = np.linspace(min_x, max_x, 1000)
-    return np.sqrt(
-        np.trapezoid((true_func(x) - rgr.evaluate(x)) ** 2, x) / (max_x - min_x)
-    )
+    return np.sqrt(get_l2_norm(rgr, True, min_x, max_x) / (max_x - min_x))
+
+def get_l2_norm(rgr, true_func, min_x, max_x):
+    x = np.linspace(min_x, max_x, 1000)
+    return np.trapezoid((true_func(x) - rgr.evaluate(x)) ** 2, x)
 
 
 def taylor_normal(mu, sigma, order):
