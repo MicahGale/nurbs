@@ -141,11 +141,13 @@ class FETRegressor(Regressor):
             y += coef.n * self.evaluate_basis(x, i)
         return y
 
-    def plot_bases(self):
+    def plot_bases(self, ax=None):
+        if ax is None:
+            ax = plt
         lines = []
         x = np.linspace(self._min, self._max, 100)
         for i in range(self._dim):
-            lines.append(plt.plot(x, self.evaluate_basis(x, i)))
+            lines.append(ax.plot(x, self.evaluate_basis(x, i)))
         return lines
 
     def evaluate_by_basis(self, x):
@@ -262,6 +264,17 @@ class BezierRegressor(NonOrthoFETRegressor):
     def evaluate_basis(self, x, i):
         return self._bases[i](self.do_affine_transform(x))
 
+    def plot_bases(self, ax=None):
+        if ax is None:
+            ax = plt
+        lines = []
+        x = np.linspace(self._min, self._max, 100)
+        for i in range(self._dim):
+            lines.append(
+                ax.plot(x, self.evaluate_basis(x, i), label=f"$B_{i}^{self._dim - 1}$")
+            )
+        return lines
+
 
 class MultiOrderRegressor(BezierRegressor):
 
@@ -358,7 +371,7 @@ class OrthoBezierRegressor(FETRegressor):
         for i in range(order + 1):
             bases.append(self._generate_basis_function(order, i))
         self._bases = bases
-        super().__init__(x_min, x_max, order)
+        super().__init__(x_min, x_max, order + 1)
 
     def do_affine_transform(self, x):
         if isinstance(x, float):
@@ -383,6 +396,19 @@ class OrthoBezierRegressor(FETRegressor):
 
     def evaluate_basis(self, x, i):
         return self._bases[i](self.do_affine_transform(x))
+
+    def plot_bases(self, ax=None):
+        if ax is None:
+            ax = plt
+        lines = []
+        x = np.linspace(self._min, self._max, 100)
+        for i in range(self._dim):
+            lines.append(
+                ax.plot(
+                    x, self.evaluate_basis(x, i), label=f"$\Phi_{i}^{self._dim - 1}$"
+                )
+            )
+        return lines
 
 
 class LegendreRegressor(FETRegressor):
