@@ -35,6 +35,7 @@ def generate_regressors(min_x, max_x, orders):
     # regressors = [rg.HistogramRegressor(min_x, max_x, bins)]
     regressors = []
     for order in orders:
+        regressors.append(rg.HistogramRegressor(min_x, max_x, order))
         regressors.append(rg.BezierRegressor(min_x, max_x, order))
         regressors.append(rg.OrthoBezierRegressor(min_x, max_x, order))
         regressors.append(rg.LegendreRegressor(min_x, max_x, order))
@@ -94,7 +95,9 @@ def converge_order():
     no_rmses = []
     o_rmses = []
     legen_rmses = []
-    for non_ortho, ortho, legen in it.batched(rgrs, 3):
+    histo_rmses = []
+    for histo, non_ortho, ortho, legen in it.batched(rgrs, 4):
+        histo_rmses.append(get_rmse(histo, norm, 0, 10) * 100)
         no_rmses.append(get_rmse(non_ortho, norm, 0, 10) * 100)
         o_rmses.append(get_rmse(ortho, norm, 0, 10) * 100)
         legen_rmses.append(get_rmse(legen, norm, 0, 10) * 100)
@@ -103,10 +106,11 @@ def converge_order():
     plt.semilogy(orders, no_rmses, "-", label="Nonorthogonal Bernstein")
     plt.plot(orders, o_rmses, "--", label="Orthogonal Bernstein")
     plt.plot(orders, legen_rmses, "-.", label="Legendre")
-    plt.plot(plt.xlim(), [0.1, 0.1], "k--", label="0.1% goal")
+    plt.plot(orders, histo_rmses, ":", label="Histogram")
+    plt.plot(plt.xlim(), [0.1, 0.1], "k--", label="0.1%")
     plt.xlabel("Polynomial order")
     plt.ylabel("Truncation Error [%]")
-    labelLines(plt.gca().get_lines(), align=False, xvals=[30] * 3 + [3])
+    labelLines(plt.gca().get_lines(), align=False, xvals=[30] * 4 + [3])
     for ext in {"svg", "png", "pdf"}:
         plt.savefig(f"order_all.{ext}")
 
@@ -140,6 +144,8 @@ def converge_samples():
     norm = lambda x: normal(x, mu, sigma)
     no_rmses = []
     o_rmses = []
+    histo_rmses = []
+    legendre_rmses = []
     multi_rmses = []
     x_samples = []
 
@@ -148,9 +154,11 @@ def converge_samples():
 
     for new_rgrs in handled_groups:
         for num_samples, rgrs in new_rgrs.items():
-            non_ortho, ortho = rgrs
+            histo, non_ortho, ortho, legendre = rgrs
             no_rmses.append(get_rmse(non_ortho, norm, 0, 10) * 100)
             o_rmses.append(get_rmse(ortho, norm, 0, 10) * 100)
+            histo_rmses.append(get_rmse(histo, norm, 0, 10) * 100)
+            legendre_rmses.append(get_rmse(legendre, norm, 0, 10) * 100)
             x_samples.append(num_samples)
 
     df = pd.DataFrame(
@@ -158,6 +166,8 @@ def converge_samples():
             "samples": x_samples,
             "non_ortho": no_rmses,
             "ortho": o_rmses,
+            "legendre": legendre_rmses,
+            "histogram": histo_rmses,
         }
     )
     df.to_excel("rmse_data.xlsx")
@@ -189,4 +199,4 @@ def converge_samples():
             plt.savefig(f"samples.{ext}")
 
 
-converge_order()
+converge_samples()
