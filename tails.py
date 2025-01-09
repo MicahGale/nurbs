@@ -86,7 +86,7 @@ def plot(rgrs, anal_rgr):
         label="Stochastic",
     )
     twin_ax.plot(rmse_x, anal_rmses, "-.^", label="numerical")
-    twin_ax.set_ylabel("Fractional L-2 Norm Error  [%]")
+    twin_ax.set_ylabel("Fractional $||E_n||^2$  [%]")
     ax.plot(x, rgr.evaluate(x), "-", label="stochastic FET")
     ax.plot(x, anal_rgr.evaluate(x), "-.", label="Numerical FE")
     ax2.plot(x, norm(x) - rgr.evaluate(x), "b-.", label="absolute discrepancy")
