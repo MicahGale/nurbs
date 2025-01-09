@@ -140,8 +140,9 @@ class FETRegressor(Regressor):
             plotter.plot(x, true_func(x), "k--", label="true curve")
             legends.append(f"R^2: {self.r2(true_func):.2g}")
             plotter.legend(labels=legends, loc="upper right")
-        plotter.errorbar(mean, 0.03, xerr=std, fmt="k^", capsize=3)
-        lines.append(plotter.plot(x, [v.n for v in y], "b-"))
+        #plotter.errorbar(mean, 0.03, xerr=std, fmt="k^", capsize=3)
+        lines.append(plotter.plot(x, [v.n for v in y], "b-", label="expansion"))
+        """
         for i in range(1, error_bar + 1):
             lines.append(
                 plotter.fill_between(
@@ -151,6 +152,7 @@ class FETRegressor(Regressor):
                     alpha=0.3 - i * 0.05,
                 )
             )
+        """
         return lines
 
     def evaluate(self, x):
@@ -190,7 +192,7 @@ class FETRegressor(Regressor):
             if ylim:
                 plotter.set_ylim(ylim)
         for i, basis_datum in enumerate(basis_data):
-            plotter.plot(x, basis_datum, "--", label=rf"$\psi_{i}$")
+            plotter.plot(x, basis_datum, "--", label=rf"$a_{i}\psi_{i}$")
         self.plot(ax, ylim=ylim)
 
     def plot_sum_bases(self):
