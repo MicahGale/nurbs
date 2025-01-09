@@ -60,6 +60,25 @@ class HistogramRegressor(Regressor):
             coeffs, np.array(range(0, self._n_bins + 1)) * self._bin_width + self._min
         )
 
+    def analytic_inner_prod(self, func):
+        last_bound = self._min
+        for i in range(self._dim):
+            x = np.linspace(last_bound, last_bound + self._bin_width, 1_000)
+            self._coeffs[i] = 2 * func(x).mean()
+            last_bound += self._bin_width
+        self._n = 2
+
+    def evaluate(self, x):
+        coeffs = self.normalize()
+        y = np.zeros_like(x)
+        for out_i, val in enumerate(x):
+            index = int((val - self._min) / self._bin_width)
+            try:
+                y[out_i] = coeffs[index]
+            except IndexError:
+                y[out_i] = coeffs[index - 1]
+        return y
+
 
 class FETRegressor(Regressor):
     def __init__(self, x_min, x_max, n_bases):
@@ -171,7 +190,7 @@ class FETRegressor(Regressor):
             if ylim:
                 plotter.set_ylim(ylim)
         for i, basis_datum in enumerate(basis_data):
-            plotter.plot(x, basis_datum, "--", label=f"$\psi_{i}$")
+            plotter.plot(x, basis_datum, "--", label=rf"$\psi_{i}$")
         self.plot(ax, ylim=ylim)
 
     def plot_sum_bases(self):
@@ -405,7 +424,7 @@ class OrthoBezierRegressor(FETRegressor):
         for i in range(self._dim):
             lines.append(
                 ax.plot(
-                    x, self.evaluate_basis(x, i), label=f"$\Phi_{i}^{self._dim - 1}$"
+                    x, self.evaluate_basis(x, i), label=rf"$\Phi_{i}^{self._dim - 1}$"
                 )
             )
         return lines
