@@ -85,7 +85,7 @@ def taylor_normal(mu, sigma, order):
 
 
 def converge_order():
-    orders = range(2, 30)
+    orders = range(2, 100)
     fig = plt.figure(figsize=(16, 9))
     norm = lambda x: normal(x, mu, sigma)
     rgrs = generate_regressors(0, 10, orders)
@@ -110,7 +110,7 @@ def converge_order():
     plt.plot(plt.xlim(), [0.1, 0.1], "k--", label="0.1%")
     plt.xlabel("Polynomial order")
     plt.ylabel("Truncation Error [%]")
-    labelLines(plt.gca().get_lines(), align=False, xvals=[30] * 4 + [3])
+    labelLines(plt.gca().get_lines(), align=False, xvals=[60] * 4 + [3])
     for ext in {"svg", "png", "pdf"}:
         plt.savefig(f"order_all.{ext}")
 
@@ -199,4 +199,4 @@ def converge_samples():
             plt.savefig(f"samples.{ext}")
 
 
-converge_samples()
+converge_order()
